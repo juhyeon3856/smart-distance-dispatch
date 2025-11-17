@@ -1,78 +1,127 @@
 # smart-distance-dispatch
 스마트 거리 배차 시스템
 
-
+```
 src/main/java/com/ieum/dispatch/
-├── order/
-│   ├── domain/
-│   │   ├── Order.java (Aggregate Root)
-│   │   ├── OrderItem.java (Entity)
-│   │   ├── OrderStatus.java (Enum)
-│   │   └── event/
-│   │       └── OrderCreatedEvent.java
-│   ├── application/
-│   │   └── OrderService.java
-│   ├── infrastructure/
-│   │   └── OrderRepository.java
-│   └── presentation/
-│       └── OrderController.java
 │
-├── dispatch/
+├── order/                                          
+│   ├── domain/                                     
+│   │   ├── Order.java                              # 주문
+│   │   ├── OrderItem.java                          # 주문 엔티티
+│   │   ├── OrderStatus.java                        # 주문 상태 열거형 (ENUM)
+│   │   └── event/
+│   │       └── OrderCreatedEvent.java              # 주문 생성 이벤트
+│   ├── application/                                
+│   │   └── OrderService.java                       # 주문 비즈니스 로직
+│   ├── infrastructure/                             
+│   │   ├── OrderRepository.java                    # 주문 데이터 저장소
+│   │   └── messaging/
+│   │       └── OrderEventProducer.java             # 주문 이벤트 Kafka 발행
+│   └── presentation/                               
+│       └── OrderController.java                    # 주문 REST API 컨트롤러
+│
+├── store/                                          
 │   ├── domain/
-│   │   ├── DispatchRequest.java (Aggregate Root)
-│   │   ├── RiderLocation.java (Value Object)
+│   │   ├── Store.java                              # 가게
+│   │   └── StoreLocation.java                      # 가게 위치 값 객체 (위도, 경도)  
+│   ├── application/
+│   │   └── StoreService.java                       # 가게 비즈니스 로직
+│   └── infrastructure/
+│       ├── StoreRepository.java                    # 가게 데이터 저장소
+│       └── messaging/
+│           └── StoreEventProducer.java             # 가게 이벤트 Kafka 발행
+│
+├── dispatch/                                       
+│   ├── domain/
+│   │   ├── DispatchRequest.java                    # 배차
+│   │   ├── RiderLocation.java                      # 라이더 위치 값 객체
+│   │   ├── DispatchStatus.java                     # 배차 상태 (요청, 할당, 수락, 거절)
 │   │   ├── service/
-│   │   │   ├── RiderSelectionService.java
-│   │   │   └── DistanceCalculationService.java
+│   │   │   ├── RiderSelectionService.java          # 최적 라이더 선정 도메인 서비스
+│   │   │   └── DistanceCalculationService.java     # 거리 계산 도메인 서비스
 │   │   └── event/
-│   │       ├── DispatchRequestedEvent.java
-│   │       └── RiderAssignedEvent.java
+│   │       ├── DispatchRequestedEvent.java         # 배차 요청 이벤트
+│   │       ├── RiderAssignedEvent.java             # 라이더 배정 이벤트
+│   │       ├── DispatchAcceptedEvent.java          # 배차 수락 이벤트
+│   │       └── DispatchRejectedEvent.java          # 배차 거절 이벤트
 │   ├── application/
-│   │   └── DispatchService.java
+│   │   └── DispatchService.java                    # 배차 요청, 라이더 선정 로직
 │   └── infrastructure/
-│       └── DispatchRepository.java
+│       ├── DispatchRepository.java                 # 배차 데이터 저장소
+│       └── messaging/
+│           ├── OrderEventConsumer.java             # 주문 이벤트 구독 → 배차 시작
+│           └── DispatchEventProducer.java          # 배차 이벤트 Kafka 발행
 │
-├── graph/
+├── graph/                                          
 │   ├── domain/
-│   │   ├── DistanceGraph.java (Aggregate Root)
-│   │   ├── GraphEdge.java (Value Object)
-│   │   ├── Location.java (Value Object)
+│   │   ├── DistanceGraph.java                      # 실거리
+│   │   ├── GraphNode.java                          # 그래프 노드 값 객체 (가게/픽업지)
+│   │   ├── GraphEdge.java                          # 그래프 간선 값 객체 (거리 정보)
+│   │   ├── Location.java                           # 위치 값 객체 (위도, 경도)
 │   │   ├── service/
-│   │   │   ├── GraphCalculationService.java
-│   │   │   └── GraphCleanupService.java
+│   │   │   ├── GraphCalculationService.java        # 실거리 계산 도메인 서비스
+│   │   │   └── GraphCleanupService.java            # 그래프 정리 도메인 서비스
 │   │   └── event/
-│   │       └── GraphCreatedEvent.java
+│   │       ├── GraphCreatedEvent.java              # 그래프 생성 이벤트
+│   │       └── GraphDeletedEvent.java              # 그래프 삭제 이벤트
 │   ├── application/
-│   │   └── GraphService.java
+│   │   └── GraphService.java                       # 그래프 생성, 조회, 삭제 로직
 │   └── infrastructure/
-│       └── GraphRepository.java
+│       ├── GraphRepository.java                    # 그래프 데이터 저장소
+│       └── messaging/
+│           ├── StoreEventConsumer.java             # 가게 이벤트 구독 → 그래프 생성
+│           ├── OrderEventConsumer.java             # 주문 이벤트 구독 → 그래프 생성
+│           └── DeliveryEventConsumer.java          # 배달 완료 구독 → 그래프 정리
 │
-├── delivery/
+├── delivery/                                       
 │   ├── domain/
-│   │   ├── Delivery.java (Aggregate Root)
-│   │   ├── DeliveryStatus.java (Enum)
+│   │   ├── Delivery.java                           # 배달 
+│   │   ├── DeliveryStatus.java                     # 배달 상태 (배달중, 완료)
 │   │   └── event/
-│   │       └── DeliveryCompletedEvent.java
+│   │       ├── DeliveryStartedEvent.java           # 배달 시작 이벤트
+│   │       ├── DeliveryInProgressEvent.java        # 배달중 이벤트
+│   │       └── DeliveryCompletedEvent.java         # 배달 완료 이벤트
 │   ├── application/
-│   │   └── DeliveryService.java
+│   │   └── DeliveryService.java                    # 배달 시작, 완료 처리 로직
 │   └── infrastructure/
-│       └── DeliveryRepository.java
+│       ├── DeliveryRepository.java                 # 배달 데이터 저장소
+│       └── messaging/
+│           ├── DispatchEventConsumer.java          # 배차 수락 구독 → 배달 시작
+│           └── DeliveryEventProducer.java          # 배달 이벤트 Kafka 발행
 │
-├── rider/
+├── rider/                                          
 │   ├── domain/
-│   │   ├── Rider.java (Aggregate Root)
+│   │   ├── Rider.java                              # 라이더
+│   │   ├── RiderStatus.java                        # 라이더 상태 (대기, 배달중, 휴식)
 │   │   └── event/
-│   │       └── RiderLocationUpdatedEvent.java
+│   │       └── RiderLocationUpdatedEvent.java      # 라이더 위치 업데이트 이벤트
 │   ├── application/
-│   │   └── RiderService.java
+│   │   └── RiderService.java                       # 라이더 등록, 위치 업데이트 로직
 │   └── infrastructure/
-│       └── RiderRepository.java
+│       ├── RiderRepository.java                    # 라이더 데이터 저장소
+│       └── messaging/
+│           └── RiderEventProducer.java             # 라이더 이벤트 Kafka 발행
 │
-└── common/
-└── kafka/
-├── KafkaProducer.java
-└── KafkaConsumer.java
-
+├── common/                                         
+│   ├── kafka/
+│   │   ├── config/
+│   │   │   ├── KafkaProducerConfig.java            # Kafka Producer 설정
+│   │   │   └── KafkaConsumerConfig.java            # Kafka Consumer 설정
+│   │   ├── producer/
+│   │   │   └── KafkaEventProducer.java             # 공통 Kafka 이벤트 발행 유틸
+│   │   └── consumer/
+│   │       └── KafkaEventConsumer.java             # 공통 Kafka 이벤트 구독 유틸
+│   ├── event/
+│   │   └── DomainEvent.java                        # 도메인 이벤트 공통 인터페이스
+│   └── exception/
+│       ├── BusinessException.java                  # 비즈니스 예외 클래스
+│       └── ErrorCode.java                          # 에러 코드 열거형
+│
+└── simulator/                                      # 시뮬레이터 (테스트용)
+    ├── OrderSimulator.java                         # 자동 주문 생성 시뮬레이터
+    ├── RiderSimulator.java                         # 라이더 위치 자동 업데이트
+    └── DispatchSimulator.java                      # 배차 수락/거절 시뮬레이션
+```
 
 주문
 - 주문 생성 > 가게:주문받기
