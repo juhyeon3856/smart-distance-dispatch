@@ -2,7 +2,7 @@
 스마트 거리 배차 시스템
 
 ```
-src/main/java/com/ieum/dispatch/
+src/main/java/com/smartdistance/sdd/
 │
 ├── order/                                          
 │   ├── domain/                                     
