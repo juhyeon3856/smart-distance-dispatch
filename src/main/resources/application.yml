@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: smart-distance-dispatch
+
+  kafka:
+    bootstrap-servers: localhost:9092  # Kafka 브로커 주소
+
+    # Producer 설정
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer # 키 직렬화 방식
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer  # 값 직렬화 방식 (JSON)
+      acks: all  # 모든 replica가 메시지를 받았는지 확인
+      retries: 3  # 전송 실패 시 3회 재시도
+      properties:
+        max.in.flight.requests.per.connection: 5
+        enable.idempotence: true  # 중복 메시지 방지
+
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer # 키 역직렬화 방식
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer  # 값 역직렬화 방식
+      group-id: smart-dispatch-group
+      auto-offset-reset: earliest # offset이 없으면 처음부터 읽기
+      enable-auto-commit: false  # 수동 커밋 ( 메시지 처리 후 명시적으로 커밋 )
+      properties:
+        spring.json.trusted.packages: '*'
+
+    listener:
+      ack-mode: manual  # 수동 acknowledge 모드 (처리 완료 후 직접 커밋)
+      concurrency: 3   # 동시 실행 리스너 스레드 수
+
+
+server:
+  port: 8080
+
+logging:
+  level:
+    org.apache.kafka: INFO
+    org.springframework.kafka: DEBUG
+    com.smartdistance.sdd: DEBUG
+
+
